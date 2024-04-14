@@ -19,6 +19,8 @@ Before you begin, ensure you have met the following requirements:
 
 
 3. Install the necessary Node.js dependencies:
+   
+   npm install
 
 ## Running the Application
 
