@@ -1,6 +1,6 @@
 {
   "name": "project_3005",
-  "type": "module" ,
+  "type": "module",
   "version": "1.0.0",
   "description": "",
   "main": "app.js",

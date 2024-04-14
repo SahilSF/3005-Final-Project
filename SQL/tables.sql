@@ -55,7 +55,7 @@ CREATE TABLE Member_Fitness (
 CREATE TABLE Register (
     MemberID INTEGER,
     ClassID INTEGER,
-	GroupFitnessSession TEXT,
+	Session TEXT,
     PRIMARY KEY (MemberID, ClassID),
     FOREIGN KEY (MemberID) REFERENCES Members(MemberID),
     FOREIGN KEY (ClassID) REFERENCES Fitness_Class(ClassID)
