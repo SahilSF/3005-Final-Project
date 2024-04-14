@@ -1,6 +1,7 @@
 import pkg from 'pg';
 const { Pool } = pkg;
 
+
 // Database connection parameters
 const DB_NAME = "Gym";
 const DB_USER = "postgres";
@@ -44,8 +45,8 @@ async function showMemberDashboard(name, memberID) {
   console.log(`\nHello ${name}!\n`);
   console.log("Select an action:");
   console.log("1. Edit profile information");
-  console.log("2. Display Profile Information");
-  console.log("3. Schedule Management");
+  console.log("2. Schedule Management");
+  console.log("3. Display Profile Information");
   console.log("4. See Future Schedules");
   console.log("5. Sign out");
 
@@ -56,10 +57,10 @@ async function showMemberDashboard(name, memberID) {
       await modifyUserProfile(name, memberID);
       break;
     case "2":
-      await showProfile(name, memberID);
+      await handleScheduleManagement(name, memberID);
       break;
     case "3":
-      await handleScheduleManagement(name, memberID);
+      await showProfile(name, memberID);
       break;
     case "4":
       await showSchedules(name, memberID);
@@ -110,18 +111,31 @@ async function showSchedules(name, memberID) {
 }
 
 async function handleScheduleManagement(name, memberID) {
-  console.log("\nWhat would you like to do?");
-  console.log("1. Schedule personal training session");
-  console.log("2. Schedule group fitness class");
-  console.log("3. Reschedule personal training session");
-  console.log("4. Cancel personal training session");
-  console.log("5. Cancel group fitness class");
+  console.log("\nWhat action would you like to take?");
+  console.log("1. Book a group fitness class");
+  console.log("2. Book a personal training session");
+  console.log("3. Change the time of a personal training session");
+  console.log("4. Withdraw from a group fitness class");
+  console.log("5. Withdraw from a personal training session");
+  
 
   const choice = await prompt("\nEnter your option: ");
   const client = await pool.connect();
   try {
     switch (choice) {
       case "1":
+
+        const groupName = await prompt("Enter name of group: ");
+        const classID = await prompt("Enter ID of class you want to register for: ");
+        const classRes = await client.query("SELECT Schedule, RoomID, TrainerID FROM Fitness_Class WHERE ClassID = $1;", [classID]);
+        const fitnessClass = classRes.rows[0];
+        if (fitnessClass) {
+          console.log(`Schedule: ${fitnessClass.schedule}, Room ID: ${fitnessClass.roomid}, Trainer ID: ${fitnessClass.trainerid}`);
+          await client.query("INSERT INTO Registers (MemberID, ClassID, GroupName) VALUES ($1, $2, $3);", [memberID, classID, groupName]);
+          console.log("Registration successful.");
+        }
+        break;
+      case "2":
         const res = await client.query(`
           SELECT t.TrainerID, t.Name, t.Specialization, t.AvailableTimes
           FROM Trainer t
@@ -142,17 +156,6 @@ async function handleScheduleManagement(name, memberID) {
           console.log("No trainers available.");
         }
         break;
-      case "2":
-        const groupName = await prompt("Enter name of group (A/B/C): ");
-        const classID = await prompt("Enter ID of class you want to register for: ");
-        const classRes = await client.query("SELECT Schedule, RoomID, TrainerID FROM Fitness_Class WHERE ClassID = $1;", [classID]);
-        const fitnessClass = classRes.rows[0];
-        if (fitnessClass) {
-          console.log(`Schedule: ${fitnessClass.schedule}, Room ID: ${fitnessClass.roomid}, Trainer ID: ${fitnessClass.trainerid}`);
-          await client.query("INSERT INTO Registers (MemberID, ClassID, GroupName) VALUES ($1, $2, $3);", [memberID, classID, groupName]);
-          console.log("Registration successful.");
-        }
-        break;
       case "3":
         const sessionIDReschedule = await prompt("Enter ID of session to be rescheduled: ");
         const newDate = await prompt("Enter new date: ");
@@ -161,14 +164,14 @@ async function handleScheduleManagement(name, memberID) {
         console.log("Session rescheduled successfully.");
         break;
       case "4":
-        const sessionIDCancel = await prompt("Enter ID of training session to be cancelled: ");
-        await client.query("DELETE FROM Training WHERE SessionID = $1;", [sessionIDCancel]);
-        console.log("Session cancelled successfully.");
-        break;
-      case "5":
         const classIDCancel = await prompt("Enter ID of group fitness class to be cancelled: ");
         await client.query("DELETE FROM Registers WHERE ClassID = $1 AND MemberID = $2;", [classIDCancel, memberID]);
         console.log("Class registration cancelled successfully.");
+        break;
+      case "5":
+        const sessionIDCancel = await prompt("Enter ID of training session to be cancelled: ");
+        await client.query("DELETE FROM Training WHERE SessionID = $1;", [sessionIDCancel]);
+        console.log("Session cancelled successfully.");
         break;
       default:
         console.log("Invalid option. Please try again.");
@@ -353,16 +356,17 @@ console.log(`\nGreetings, Trainer ${name}!`);
 
   async function displayAdminDashboard(name, staffID) {
     console.log(`\nWelcome Admin ${name}!`);
-    console.log("What would you like to do?");
-    console.log("1. Manage room bookings");
-    console.log("2. show room bookings");
-    console.log("3. show room information");
-    console.log("4. Update equipment status");
-    console.log("5. Monitor equipment status");
-    console.log("6. Manage group fitness class schedules");
-    console.log("7. show all classes");
-    console.log("8. Billing");
-    console.log("9. Logout");
+    console.log("Please select an option:");
+    console.log("1. Administer room reservations");
+    console.log("2. Display room bookings");
+    console.log("3. Display room details");
+    console.log("4. Modify equipment status");
+    console.log("5. Check equipment status");
+    console.log("6. Organize group fitness class timetables");
+    console.log("7. View all classes");
+    console.log("8. Manage billing");
+    console.log("9. Sign out");
+
   
     const choice = await prompt("\nEnter your option: ");
     switch (choice) {
@@ -474,10 +478,10 @@ async function showRoomInformation(name, staffID) {
 
 
 async function manageRoomBookings(name, staffID) {
-  console.log("\nWhat would you like to do?");
-  console.log("1. Update room information");
-  console.log("2. Update room for fitness classes");
-  console.log("3. Delete reservation for fitness class");
+  console.log("\nWhat action would you like to take?");
+  console.log("1. Modify room details");
+  console.log("2. Adjust room assignments for fitness classes");
+  console.log("3. Remove a fitness class reservation");
 
   const choice = await prompt("\nEnter your option: ");
   const client = await pool.connect();
@@ -549,11 +553,12 @@ async function monitorEquipment(name, staffID) {
 
 async function manageClassSchedules(name, staffID) {
   console.log("\nWhat would you like to do?");
-  console.log("1. Add new group fitness class");
-  console.log("2. Update group fitness class");
-  console.log("3. Cancel group fitness class");
-  console.log("4. Update training session");
-  console.log("5. Cancel training session");
+  console.log("1. Create a new group fitness class");
+  console.log("2. Edit a group fitness class");
+  console.log("3. Discontinue a group fitness class");
+  console.log("4. Modify a training session");
+  console.log("5. Withdraw from a training session");
+
 
   const choice = await prompt("\nEnter your option: ");
   const client = await pool.connect();
@@ -601,9 +606,9 @@ async function manageClassSchedules(name, staffID) {
 
 async function login() {
   console.log("\nWhat would you like to login as?");
-  console.log("1. Member");
-  console.log("2. Trainer");
-  console.log("3. Admin");
+  console.log("1. Login as Member");
+  console.log("2. Login as Trainer");
+  console.log("3. Login as Admin");
 
   const choice = await prompt("\nEnter your option: ");
   switch (choice.trim()) {
@@ -720,8 +725,6 @@ async function register() {
       rl.close(); 
   }
 }
-
-
 
 
 function prompt(question) {
