@@ -5,7 +5,7 @@ const { Pool } = pkg;
 // Database connection parameters
 const DB_NAME = "Gym";
 const DB_USER = "postgres";
-const DB_PASSWORD = "asdf";
+const DB_PASSWORD = "1234567890";
 const DB_HOST = "localhost";
 const DB_PORT = "5432";
 
@@ -41,9 +41,7 @@ const rl = readline.createInterface({
 });
 
 
-async function showMemberDashboard(name, memberID) {
-  console.log(`\nHello ${name}!\n`);
-  console.log("Select an action:");
+async function showMemberDashboard(memberID) {
   console.log("1. Edit profile information");
   console.log("2. Schedule Management");
   console.log("3. Display Profile Information");
@@ -51,31 +49,31 @@ async function showMemberDashboard(name, memberID) {
   console.log("5. Sign out");
 
   //Done
-  const choice = await prompt("\nEnter your option: ");
-  switch (choice) {
+  const options = await prompt("\nEnter your option: ");
+  switch (options) {
     case "1":
-      await modifyUserProfile(name, memberID);
+      await modifyUserProfile(memberID);
       break;
     case "2":
-      await handleScheduleManagement(name, memberID);
+      await handleScheduleManagement(memberID);
       break;
     case "3":
-      await showProfile(name, memberID);
+      await showProfile(memberID);
       break;
     case "4":
-      await showSchedules(name, memberID);
+      await showSchedules(memberID);
       break;
     case "5":
       main(); 
       break;
     default:
       console.log("\nInvalid option. Please try again.\n");
-      await showMemberDashboard(name, memberID);
+      await showMemberDashboard(memberID);
   }
 }
 
 
-async function showSchedules(name, memberID) {
+async function showSchedules(memberID) {
   const client = await pool.connect();
   try {
     const res = await client.query("SELECT SessionID, Date, Time, TrainerID FROM Training WHERE MemberID = $1;", [memberID]);
@@ -95,34 +93,33 @@ async function showSchedules(name, memberID) {
                                          WHERE R.MemberID = $1;`, [memberID]);
     const classes = classRes.rows;
     if (classes.length > 0) {
-      console.log("\nUpcoming Group Fitness Classes:");
+      console.log("\nUpcoming Group Classes:");
       classes.forEach(cls => {
         console.log(`Class ID: ${cls.classid}, Schedule: ${cls.schedule}, Trainer ID: ${cls.trainerid}`);
       });
     } else {
-      console.log("No upcoming Group Fitness Classes.");
+      console.log("No upcoming Group Classes.");
     }
   } catch (err) {
     console.error('Error executing query', err.stack);
   } finally {
     client.release();
-    await showMemberDashboard(name, memberID);
+    await showMemberDashboard(memberID);
   }
 }
 
-async function handleScheduleManagement(name, memberID) {
-  console.log("\nWhat action would you like to take?");
-  console.log("1. Book a group fitness class");
-  console.log("2. Book a personal training session");
-  console.log("3. Change the time of a personal training session");
-  console.log("4. Withdraw from a group fitness class");
-  console.log("5. Withdraw from a personal training session");
+async function handleScheduleManagement(memberID) {
+  console.log("1. Book a group class");
+  console.log("2. Book a personal class");
+  console.log("3. Change the time of a personal class");
+  console.log("4. Withdraw from a group class");
+  console.log("5. Withdraw from a personal class");
   
 
-  const choice = await prompt("\nEnter your option: ");
+  const options = await prompt("\nEnter your option: ");
   const client = await pool.connect();
   try {
-    switch (choice) {
+    switch (options) {
       case "1":
 
         const groupName = await prompt("Enter name of group: ");
@@ -180,24 +177,23 @@ async function handleScheduleManagement(name, memberID) {
     console.error('Error executing query', err.stack);
   } finally {
     client.release();
-    await showMemberDashboard(name, memberID);
+    await showMemberDashboard(memberID);
   }
 }
 
 
-async function modifyUserProfile(name, memberID) {
-  console.log("\nModify your profile details:");
+async function modifyUserProfile(memberID) {
   console.log("1. Change your name");
   console.log("2. Change your password");
   console.log("3. Change your email address");
   console.log("4. Set new fitness goals");
   console.log("5. Update your health metrics");
 
-  const choice = await prompt("\nEnter your option: ");
+  const options = await prompt("\nEnter your option: ");
   const client = await pool.connect();
 
   try {
-    switch (choice) {
+    switch (options) {
       case "1":
         const newName = await prompt("Enter updated name: ");
         await client.query("UPDATE Members SET Name = $1 WHERE MemberID = $2;", [newName, memberID]);
@@ -219,9 +215,9 @@ async function modifyUserProfile(name, memberID) {
         console.log("Goals updated successfully.");
         break;
       case "5":
-        const newBMI = await prompt("Enter new BMI: ");
-        await client.query("UPDATE Members SET BMI = $1 WHERE MemberID = $2;", [newBMI, memberID]);
-        console.log("BMI updated successfully.");
+        const newWeight = await prompt("Enter new Weight: ");
+        await client.query("UPDATE Members SET Weight = $1 WHERE MemberID = $2;", [newWeight, memberID]);
+        console.log("Weight updated successfully.");
         break;
       default:
         console.log("Invalid option. Please select a valid option.");
@@ -231,17 +227,17 @@ async function modifyUserProfile(name, memberID) {
     console.error('Error executing query', err.stack);
   } finally {
     client.release();
-    await showMemberDashboard(name, memberID);
+    await showMemberDashboard(memberID);
   }
 }
 
-async function showProfile(name, memberID) {
+async function showProfile(memberID) {
     const client = await pool.connect();
     try {
-      const res = await client.query("SELECT Name, Email, Goal, BMI, PaymentStatus FROM Members WHERE MemberID = $1;", [memberID]);
+      const res = await client.query("SELECT Name, Email, Goal, Weight, PaymentStatus FROM Members WHERE MemberID = $1;", [memberID]);
       const member = res.rows[0];
       if (member) {
-        console.log(`Name: ${member.name}, Email: ${member.email},  Goals: ${member.goal}, BMI: ${member.bmi}, PaymentStatus: ${member.paymentstatus}` );
+        console.log(`Name: ${member.name}, Email: ${member.email},  Goals: ${member.goal}, Weight: ${member.Weight}, PaymentStatus: ${member.paymentstatus}` );
       } else {
         console.log("\nNo profile information found.");
       }
@@ -249,14 +245,12 @@ async function showProfile(name, memberID) {
       console.error('Error executing query', err.stack);
     } finally {
       client.release();
-      await showMemberDashboard(name, memberID);
+      await showMemberDashboard(memberID);
     }
 }
   
-async function showTrainerDashboard(name, trainerID) {
+async function showTrainerDashboard(trainerID) {
     
-console.log(`\nGreetings, Trainer ${name}!`);
-    console.log("\nPlease select your action:");
     console.log("1. Modify availability");
     console.log("2. View member profiles");
     console.log("3. View your schedule");
@@ -264,27 +258,27 @@ console.log(`\nGreetings, Trainer ${name}!`);
 
   
   
-    const choice = await prompt("\nEnter your option: ");
-    switch (choice) {
+    const options = await prompt("\nEnter your option: ");
+    switch (options) {
       case "1":
-        await updateAvailability(name, trainerID);
+        await updateAvailability(trainerID);
         break;
       case "2":
-        await showMemberProfiles(name, trainerID);
+        await showMemberProfiles(trainerID);
         break;
       case "3":
-        await showrainerSchedules(name, trainerID);
+        await showrainerSchedules(trainerID);
         break;
       case "4":
         main(); 
         break;
       default:
         console.log("\nInvalid option. Please try again.");
-        await showTrainerDashboard(name, trainerID);
+        await showTrainerDashboard(trainerID);
     }
   }
 
-  async function showrainerSchedules(name, trainerID) {
+  async function showrainerSchedules(trainerID) {
     const client = await pool.connect();
     try {
       const res = await client.query("SELECT SessionID, Date, Time, MemberID FROM Training WHERE TrainerID = $1;", [trainerID]);
@@ -312,11 +306,11 @@ console.log(`\nGreetings, Trainer ${name}!`);
       console.error('Error executing query', err.stack);
     } finally {
       client.release();
-      await showTrainerDashboard(name, trainerID);
+      await showTrainerDashboard(trainerID);
     }
   }
 
-  async function updateAvailability(name, trainerID) {
+  async function updateAvailability(trainerID) {
     const availability = await prompt("Enter your availability: ");
     const client = await pool.connect();
     try {
@@ -326,20 +320,20 @@ console.log(`\nGreetings, Trainer ${name}!`);
       console.error('Error executing query', err.stack);
     } finally {
       client.release();
-      await showTrainerDashboard(name, trainerID);
+      await showTrainerDashboard(trainerID);
     }
   }
 
-  async function showMemberProfiles(name, trainerID) {
+  async function showMemberProfiles(trainerID) {
     const memberName = await prompt("Enter name of member to be searched: ");
     const client = await pool.connect();
     try {
-      const res = await client.query("SELECT MemberID, Name, Email, goal, BMI, PaymentStatus FROM Members WHERE Name = $1;", [memberName]);
+      const res = await client.query("SELECT MemberID, Name, Email, goal, Weight, PaymentStatus FROM Members WHERE Name = $1;", [memberName]);
       const members = res.rows;
       if (members.length > 0) {
         console.log("Member profiles found:");
         members.forEach(member => {
-          console.log(`Member ID: ${member.memberid}, Name: ${member.name}, Email: ${member.email}, Goal: ${member.goal}, BMI: ${member.BMI}, Payment Status: ${member.paymentstatus}`);
+          console.log(`Member ID: ${member.memberid}, Name: ${member.name}, Email: ${member.email}, Goal: ${member.goal}, Weight: ${member.Weight}, Payment Status: ${member.paymentstatus}`);
         });
       } else {
         console.log("Member not found.");
@@ -348,15 +342,13 @@ console.log(`\nGreetings, Trainer ${name}!`);
       console.error('Error executing query', err.stack);
     } finally {
       client.release();
-      await showTrainerDashboard(name, trainerID);
+      await showTrainerDashboard(trainerID);
     }
   }
   
 
 
-  async function displayAdminDashboard(name, staffID) {
-    console.log(`\nWelcome Admin ${name}!`);
-    console.log("Please select an option:");
+  async function displayAdminDashboard(staffID) {
     console.log("1. Administer room reservations");
     console.log("2. Display room bookings");
     console.log("3. Display room details");
@@ -368,58 +360,57 @@ console.log(`\nGreetings, Trainer ${name}!`);
     console.log("9. Sign out");
 
   
-    const choice = await prompt("\nEnter your option: ");
-    switch (choice) {
+    const options = await prompt("\nEnter your option: ");
+    switch (options) {
       case "1":
-        await manageRoomBookings(name, staffID);
+        await manageRoomBookings(staffID);
         break;
       case "2":
-        await showRoomBookings(name, staffID);
+        await showRoomBookings(staffID);
         break;
       case "3":
-        await showRoomInformation(name, staffID);
+        await showRoomInformation(staffID);
         break;
       case "4":
-        await manageEquipment(name, staffID);
+        await manageEquipment(staffID);
         break;
       case "5":
-        await monitorEquipment(name, staffID);
+        await monitorEquipment(staffID);
         break;
       case "6":
-        await manageClassSchedules(name, staffID);
+        await manageClassSchedules(staffID);
         break;
       case "7":
-        await showAllClasses(name, staffID);
+        await showAllClasses(staffID);
         break;
       case "8":
-        await billing(name, staffID);
+        await billing(staffID);
         break;
       case "9":
         main(); 
         break;
       default:
         console.log("\nInvalid option. Please try again.");
-        await displayAdminDashboard(name, staffID);
+        await displayAdminDashboard(staffID);
     }
   }
 
-  async function showAllClasses(name, staffID) {
-  console.log("\nWhich class would you like to show?\n");
-  console.log("1. Group Fitness Classes");
-  console.log("2. Personal Training Sessions");
+  async function showAllClasses(staffID) {
+  console.log("1. Group Classes");
+  console.log("2. Personal Classes");
 
-  const choice = await prompt("\nEnter your option: ");
+  const options = await prompt("\nEnter your option: ");
   const client = await pool.connect();
   try {
-    if (choice === "1") {
+    if (options === "1") {
       const { rows: classes } = await client.query("SELECT * FROM Fitness_Class;");
-      console.log("Group Fitness Classes:");
+      console.log("Group Classes:");
       classes.forEach(cls => {
         console.log(`Class ID: ${cls.classid}, Schedule: ${cls.schedule}, Room ID: ${cls.RoomID}, Trainer ID: ${cls.trainerid}`);
       });
-    } else if (choice === "2") {
+    } else if (options === "2") {
       const { rows: sessions } = await client.query("SELECT * FROM Training;");
-      console.log("Personal Training Sessions:");
+      console.log("Personal Classes:");
       sessions.forEach(session => {
         console.log(`Session ID: ${session.sessionid}, Date: ${session.date}, Time: ${session.time}, Member ID: ${session.memberid}, Trainer ID: ${session.trainerid}`);
       });
@@ -431,11 +422,11 @@ console.log(`\nGreetings, Trainer ${name}!`);
     console.error('Error executing query', err.stack);
   } finally {
     client.release();
-    await displayAdminDashboard(name, staffID);
+    await displayAdminDashboard(staffID);
   }
 }
 
-async function showRoomBookings(name, staffID) {
+async function showRoomBookings(staffID) {
     const client = await pool.connect();
     try {
       const { rows: bookings } = await client.query("SELECT ClassID, RoomID FROM Fitness_Class;");
@@ -451,12 +442,12 @@ async function showRoomBookings(name, staffID) {
       console.error('Error executing query', err.stack);
     } finally {
       client.release();
-      await displayAdminDashboard(name, staffID);
+      await displayAdminDashboard(staffID);
     }
 }
   
 
-async function showRoomInformation(name, staffID) {
+async function showRoomInformation(staffID) {
     const client = await pool.connect();
     try {
       const { rows: rooms } = await client.query("SELECT RoomID, Capacity, StaffID FROM Room;");
@@ -472,21 +463,20 @@ async function showRoomInformation(name, staffID) {
       console.error('Error executing query', err.stack);
     } finally {
       client.release();
-      await displayAdminDashboard(name, staffID);
+      await displayAdminDashboard(staffID);
     }
   }
 
 
-async function manageRoomBookings(name, staffID) {
-  console.log("\nWhat action would you like to take?");
+async function manageRoomBookings(staffID) {
   console.log("1. Modify room details");
   console.log("2. Adjust room assignments for fitness classes");
   console.log("3. Remove a fitness class reservation");
 
-  const choice = await prompt("\nEnter your option: ");
+  const options = await prompt("\nEnter your option: ");
   const client = await pool.connect();
   try {
-    switch (choice) {
+    switch (options) {
       case "1":
         const RoomID = await prompt("Enter id of room to be updated: ");
         const capacity = await prompt("Enter new capacity: ");
@@ -511,12 +501,12 @@ async function manageRoomBookings(name, staffID) {
     console.error('Error executing query', err.stack);
   } finally {
     client.release();
-    await displayAdminDashboard(name, staffID);
+    await displayAdminDashboard(staffID);
   }
 }
 
 
-async function manageEquipment(name, staffID) {
+async function manageEquipment(staffID) {
     const equipmentID = await prompt("Enter id of equipment to be updated: ");
     const status = await prompt("Enter updated status: ");
     const client = await pool.connect();
@@ -527,12 +517,12 @@ async function manageEquipment(name, staffID) {
       console.error('Error executing query', err.stack);
     } finally {
       client.release();
-      await displayAdminDashboard(name, staffID);
+      await displayAdminDashboard(staffID);
     }
   }
 
   
-async function monitorEquipment(name, staffID) {
+async function monitorEquipment(staffID) {
   const equipmentID = await prompt("Enter id of equipment to be monitored: ");
   const client = await pool.connect();
   try {
@@ -546,13 +536,12 @@ async function monitorEquipment(name, staffID) {
     console.error('Error executing query', err.stack);
   } finally {
     client.release();
-    await displayAdminDashboard(name, staffID);
+    await displayAdminDashboard(staffID);
   }
 }
 
 
-async function manageClassSchedules(name, staffID) {
-  console.log("\nWhat would you like to do?");
+async function manageClassSchedules(staffID) {
   console.log("1. Create a new group fitness class");
   console.log("2. Edit a group fitness class");
   console.log("3. Discontinue a group fitness class");
@@ -560,10 +549,10 @@ async function manageClassSchedules(name, staffID) {
   console.log("5. Withdraw from a training session");
 
 
-  const choice = await prompt("\nEnter your option: ");
+  const options = await prompt("\nEnter your option: ");
   const client = await pool.connect();
   try {
-    switch (choice) {
+    switch (options) {
       case "1":
         const schedule = await prompt("Enter schedule of class: ");
         const trainerID = await prompt("Enter trainer ID for class: ");
@@ -600,18 +589,17 @@ async function manageClassSchedules(name, staffID) {
     console.error('Error executing query', err.stack);
   } finally {
     client.release();
-    await displayAdminDashboard(name, staffID);
+    await displayAdminDashboard(staffID);
   }
 }
 
 async function login() {
-  console.log("\nWhat would you like to login as?");
   console.log("1. Login as Member");
   console.log("2. Login as Trainer");
   console.log("3. Login as Admin");
 
-  const choice = await prompt("\nEnter your option: ");
-  switch (choice.trim()) {
+  const options = await prompt("\nEnter your option: ");
+  switch (options.trim()) {
     case "1":
       await memberAuthentication();
       break;
@@ -635,7 +623,7 @@ async function memberAuthentication() {
     const { rows } = await client.query("SELECT MemberID, Name FROM Members WHERE Email = $1 AND Password = $2", [email, password]);
     if (rows.length > 0) {
       const member = rows[0];
-      await showMemberDashboard(member.name, member.memberid);
+      await showMemberDashboard(member.memberid);
     } else {
       console.log("Invalid email or password. Please try again.");
       await memberAuthentication();
@@ -654,7 +642,7 @@ async function trainerAuthentication() {
     const { rows } = await client.query("SELECT TrainerID, Name FROM Trainer WHERE TrainerID = $1", [trainerID]);
     if (rows.length > 0) {
       const trainer = rows[0];
-      await showTrainerDashboard(trainer.name, trainer.trainerid); 
+      await showTrainerDashboard(trainer.trainerid); 
     } else {
       console.log("Invalid trainer ID. Please try again.");
       await trainerAuthentication();
@@ -673,7 +661,7 @@ async function adminAuthentication() {
     const { rows } = await client.query("SELECT StaffID, Name FROM Staff WHERE StaffID = $1", [staffID]);
     if (rows.length > 0) {
       const admin = rows[0];
-      await displayAdminDashboard(admin.name, admin.staffid); 
+      await displayAdminDashboard(admin.staffid); 
     } else {
       console.log("Invalid admin ID. Please try again.");
       await adminAuthentication();
@@ -691,14 +679,14 @@ async function register() {
       const email = await prompt("Enter email: ");
       const password = await prompt("Enter password: ");
       const goals = await prompt("Enter fitness goals: ");
-      const BMI = await prompt("Enter BMI: ");
+      const weight = await prompt("Enter Weight: ");
 
       const client = await pool.connect();
       try {
           await client.query("BEGIN");
           await client.query(
-              "INSERT INTO Members (Name, Email, Password, Goal, BMi, PaymentStatus) VALUES ($1, $2, $3, $4, $5, 'Pending');",
-              [name, email, password, goals, BMI]
+              "INSERT INTO Members (Name, Email, Password, Goal, Weight, PaymentStatus) VALUES ($1, $2, $3, $4, $5, 'Pending');",
+              [name, email, password, goals, weight]
           );
           const res = await client.query(
               "SELECT MemberID FROM Members WHERE Email = $1;",
@@ -708,7 +696,7 @@ async function register() {
           const memberID = res.rows[0]?.memberid; 
           if (memberID) {
               console.log("\nUser registered successfully.");
-              await showMemberDashboard(name, memberID); 
+              await showMemberDashboard(memberID); 
           } else {
               console.log("\nRegistration failed. Please try again.");
               await register(); 
@@ -737,8 +725,8 @@ async function main() {
     console.log("2. Register"); 
     console.log("3. Exit");
 
-    const choice = await prompt("\nWhat would you like to do? ");
-    switch (choice.trim()) {
+    const options = await prompt("\nWhat would you like to do? ");
+    switch (options.trim()) {
         case "1":
             await login();
             break;
