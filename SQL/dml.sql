@@ -1,6 +1,6 @@
 
 -- Insert data into Members
-INSERT INTO Members (Name, Email, Password, Goal, BMI, PaymentStatus) VALUES
+INSERT INTO Members (Name, Email, Password, Goal, Weight, PaymentStatus) VALUES
 ('John Doe', 'johndoe@example.com', 'password123', 'Lose weight', '24', 'Paid'),
 ('Jane Smith', 'janesmith@example.com', 'password456', 'Gain muscle', '22', 'Unpaid');
 
@@ -39,7 +39,7 @@ INSERT INTO Member_Fitness (MemberID, ClassID) VALUES
 (2, 2);
 
 -- Insert data into Register
-INSERT INTO Register (MemberID, ClassID, GroupFitnessSession) VALUES
+INSERT INTO Register (MemberID, ClassID, Session) VALUES
 (1, 1, 'Morning Yoga'),
 (2, 2, 'Evening Weights');
 
@@ -47,3 +47,4 @@ INSERT INTO Register (MemberID, ClassID, GroupFitnessSession) VALUES
 INSERT INTO Training (TrainerID, MemberID, Date, Time) VALUES
 (1, 1, '2024-04-12', '09:00:00'),
 (2, 2, '2024-04-12', '17:00:00');
+
