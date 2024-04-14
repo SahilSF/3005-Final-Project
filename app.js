@@ -31,6 +31,7 @@ async function connect() {
 export { connect, pool };
 
 
+
 import readline from 'readline';
 
 const rl = readline.createInterface({
@@ -48,7 +49,7 @@ async function showMemberDashboard(name, memberID) {
   console.log("4. See Future Schedules");
   console.log("5. Sign out");
 
-
+  //Done
   const choice = await prompt("\nEnter your option: ");
   switch (choice) {
     case "1":
