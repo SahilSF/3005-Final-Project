@@ -125,29 +125,26 @@ async function handleScheduleManagement(memberID) {
         const fitnessClass = classRes.rows[0];
         if (fitnessClass) {
           console.log(`Schedule: ${fitnessClass.schedule}, Room ID: ${fitnessClass.roomid}, Trainer ID: ${fitnessClass.trainerid}`);
-          await client.query("INSERT INTO Registers (MemberID, ClassID, GroupName) VALUES ($1, $2, $3);", [memberID, classID, groupName]);
+          await client.query("INSERT INTO Register (MemberID, ClassID, GroupName) VALUES ($1, $2, $3);", [memberID, classID, groupName]);
           console.log("Registration successful.");
         }
         break;
       case "2":
-        const res = await client.query(`
-          SELECT t.TrainerID, t.Name, t.Specialization, t.AvailableTimes
-          FROM Trainer t
-          LEFT JOIN Training ts ON t.TrainerID = ts.TrainerID
-          WHERE ts.TrainerID IS NULL;
-        `);
+        const res = await client.query(`SELECT t.TrainerID, t.Name, t.Specialization FROM Trainer t LEFT JOIN Training ts ON t.TrainerID = ts.TrainerID GROUP BY t.TrainerID, t.Name, t.Specialization HAVING COUNT(ts.SessionID) = 0;`);
         const sessions = res.rows;
         if (sessions.length > 0) {
-          sessions.forEach(session => {
-            console.log(`${session.trainerid}: ${session.name}, Specialization: ${session.specialization}, Available Times: ${session.availabletimes}`);
-          });
-          const trainerID = await prompt("Enter ID of the trainer you want to schedule a session with: ");
-          const date = await prompt("Enter date of session: ");
-          const time = await prompt("Enter time of session: ");
-          await client.query("INSERT INTO Training (Date, Time, MemberID, TrainerID) VALUES ($1, $2, $3, $4);", [date, time, memberID, trainerID]);
-          console.log("Session scheduled successfully.");
-        } else {
-          console.log("No trainers available.");
+        console.log("Available trainers:");
+        sessions.forEach(session => {
+        console.log(`${session.trainerid}: ${session.name}, Specialization: ${session.specialization}`);
+         });
+        const trainerID = await prompt("Enter ID of the trainer you want to schedule a session with: ");
+        const date = await prompt("Enter date of session (YYYY-MM-DD): ");
+        const time = await prompt("Enter time of session (HH:MM): ");
+        const memberID = await prompt("Enter your Member ID: "); 
+        await client.query("INSERT INTO Training (Date, Time, MemberID, TrainerID) VALUES ($1, $2, $3, $4);", [date, time, memberID, trainerID]);
+        console.log("Session scheduled successfully.");
+         } else {
+        console.log("No trainers available.");
         }
         break;
       case "3":
@@ -159,7 +156,7 @@ async function handleScheduleManagement(memberID) {
         break;
       case "4":
         const classIDCancel = await prompt("Enter ID of group fitness class to be cancelled: ");
-        await client.query("DELETE FROM Registers WHERE ClassID = $1 AND MemberID = $2;", [classIDCancel, memberID]);
+        await client.query("DELETE FROM Register WHERE ClassID = $1 AND MemberID = $2;", [classIDCancel, memberID]);
         console.log("Class registration cancelled successfully.");
         break;
       case "5":
