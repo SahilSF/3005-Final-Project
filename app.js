@@ -184,7 +184,7 @@ async function modifyUserProfile(memberID) {
   console.log("2. Change your password");
   console.log("3. Change your email address");
   console.log("4. Set new fitness goals");
-  console.log("5. Update your health metrics");
+  console.log("5. Update your weight");
 
   const options = await prompt("\nEnter your option: ");
   const client = await pool.connect();
