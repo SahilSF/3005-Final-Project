@@ -345,249 +345,112 @@ async function showTrainerDashboard(trainerID) {
 
 
   async function displayAdminDashboard(staffID) {
-    console.log("1. Administer room reservations");
-    console.log("2. Display room bookings");
-    console.log("3. Display room details");
-    console.log("4. Modify equipment status");
-    console.log("5. Check equipment status");
-    console.log("6. Organize group fitness class timetables");
-    console.log("7. View all classes");
-    console.log("8. Manage billing");
-    console.log("9. Sign out");
+    console.log("1. Display room bookings");
+    console.log("2. Equipment Maintenance Monitoring");
+    console.log("3. Class Schedule Updating");
+    console.log("4. Manage Billing");
+    console.log("5. Sign out");
 
-  
     const options = await prompt("\nEnter your option: ");
     switch (options) {
-      case "1":
-        await manageRoomBookings(staffID);
-        break;
-      case "2":
-        await showRoomBookings(staffID);
-        break;
-      case "3":
-        await showRoomInformation(staffID);
-        break;
-      case "4":
-        await manageEquipment(staffID);
-        break;
-      case "5":
-        await monitorEquipment(staffID);
-        break;
-      case "6":
-        await manageClassSchedules(staffID);
-        break;
-      case "7":
-        await showAllClasses(staffID);
-        break;
-      case "8":
-        await billing(staffID);
-        break;
-      case "9":
-        main(); 
-        break;
-      default:
-        console.log("\nInvalid option. Please try again.");
-        await displayAdminDashboard(staffID);
+        case "1":
+            await showRoomBookings(staffID);
+            break;
+        case "2":
+            await monitorEquipment(staffID);
+            break;
+        case "3":
+            await updateClassSchedule(staffID);
+            break;
+        case "4":
+            await manageBilling(staffID);
+            break;
+        case "5":
+            console.log("Exiting...");
+            break;
+        default:
+            console.log("\nInvalid option. Please try again.");
+            await displayAdminDashboard(staffID);
     }
-  }
-
-  async function showAllClasses(staffID) {
-  console.log("1. Group Classes");
-  console.log("2. Personal Classes");
-
-  const options = await prompt("\nEnter your option: ");
-  const client = await pool.connect();
-  try {
-    if (options === "1") {
-      const { rows: classes } = await client.query("SELECT * FROM Fitness_Class;");
-      console.log("Group Classes:");
-      classes.forEach(cls => {
-        console.log(`Class ID: ${cls.classid}, Schedule: ${cls.schedule}, Room ID: ${cls.RoomID}, Trainer ID: ${cls.trainerid}`);
-      });
-    } else if (options === "2") {
-      const { rows: sessions } = await client.query("SELECT * FROM Training;");
-      console.log("Personal Classes:");
-      sessions.forEach(session => {
-        console.log(`Session ID: ${session.sessionid}, Date: ${session.date}, Time: ${session.time}, Member ID: ${session.memberid}, Trainer ID: ${session.trainerid}`);
-      });
-    } else {
-      console.log("\nInvalid option. Please try again.");
-      await showAllClasses(name, staffID);
-    }
-  } catch (err) {
-    console.error('Error executing query', err.stack);
-  } finally {
-    client.release();
-    await displayAdminDashboard(staffID);
-  }
 }
 
 async function showRoomBookings(staffID) {
     const client = await pool.connect();
     try {
-      const { rows: bookings } = await client.query("SELECT ClassID, RoomID FROM Fitness_Class;");
-      if (bookings.length > 0) {
-        console.log("Room bookings:");
+        const { rows: bookings } = await client.query("SELECT ClassID, Schedule, RoomID, TrainerID FROM Fitness_Class;");
+        console.log("Room bookings for classes:");
         bookings.forEach(booking => {
-          console.log(`ClassID: ${booking.classID}, Room ID: ${booking.RoomID}`);
+            console.log(`Class ID: ${booking.classid}, Schedule: ${booking.schedule}, Room ID: ${booking.roomid}, Trainer ID: ${booking.trainerid}`);
         });
-      } else {
-        console.log("No room bookings found.");
-      }
     } catch (err) {
-      console.error('Error executing query', err.stack);
+        console.error('Error executing query', err.stack);
     } finally {
-      client.release();
-      await displayAdminDashboard(staffID);
+        client.release();
+        await displayAdminDashboard(staffID);
     }
 }
-  
 
-async function showRoomInformation(staffID) {
-    const client = await pool.connect();
-    try {
-      const { rows: rooms } = await client.query("SELECT RoomID, Capacity, StaffID FROM Room;");
-      if (rooms.length > 0) {
-        console.log("Room information:");
-        rooms.forEach(room => {
-          console.log(`Room ID: ${room.RoomID}, Capacity: ${room.capacity}, Staff ID: ${room.staffid}`);
-        });
-      } else {
-        console.log("No room information found.");
-      }
-    } catch (err) {
-      console.error('Error executing query', err.stack);
-    } finally {
-      client.release();
-      await displayAdminDashboard(staffID);
-    }
-  }
-
-
-async function manageRoomBookings(staffID) {
-  console.log("1. Modify room details");
-  console.log("2. Adjust room assignments for fitness classes");
-  console.log("3. Remove a fitness class reservation");
-
-  const options = await prompt("\nEnter your option: ");
-  const client = await pool.connect();
-  try {
-    switch (options) {
-      case "1":
-        const RoomID = await prompt("Enter id of room to be updated: ");
-        const capacity = await prompt("Enter new capacity: ");
-        await client.query("UPDATE Room SET Capacity = $1 WHERE RoomID = $2;", [capacity, RoomID]);
-        console.log("Room updated successfully.");
-        break;
-      case "2":
-        const classID = await prompt("Enter id of fitness class to be updated: ");
-        const newRoomID = await prompt("Enter new room ID: ");
-        await client.query("UPDATE Fitness_Class SET RoomID = $1 WHERE ClassID = $2;", [newRoomID, classID]);
-        console.log("Room updated successfully.");
-        break;
-      case "3":
-        const classIDToDelete = await prompt("Enter id of fitness class to be deleted: ");
-        await client.query("DELETE FROM Fitness_Class WHERE ClassID = $1;", [classIDToDelete]);
-        console.log("Reservation for fitness class deleted successfully.");
-        break;
-      default:
-        console.log("Invalid option. Please try again.");
-    }
-  } catch (err) {
-    console.error('Error executing query', err.stack);
-  } finally {
-    client.release();
-    await displayAdminDashboard(staffID);
-  }
-}
-
-
-async function manageEquipment(staffID) {
-    const equipmentID = await prompt("Enter id of equipment to be updated: ");
-    const status = await prompt("Enter updated status: ");
-    const client = await pool.connect();
-    try {
-      await client.query("UPDATE Equipment SET Status = $1 WHERE EquipmentID = $2;", [status, equipmentID]);
-      console.log("Equipment status updated successfully.");
-    } catch (err) {
-      console.error('Error executing query', err.stack);
-    } finally {
-      client.release();
-      await displayAdminDashboard(staffID);
-    }
-  }
-
-  
 async function monitorEquipment(staffID) {
-  const equipmentID = await prompt("Enter id of equipment to be monitored: ");
-  const client = await pool.connect();
-  try {
-    const { rows } = await client.query("SELECT Status FROM Equipment WHERE EquipmentID = $1;", [equipmentID]);
-    if (rows.length > 0) {
-      console.log(`The status of equipment with id ${equipmentID} is ${rows[0].status}`);
-    } else {
-      console.log("Equipment not found.");
+    const client = await pool.connect();
+    try {
+        const { rows: equipment } = await client.query("SELECT EquipmentID, Status FROM Equipment;");
+        console.log("Equipment status:");
+        equipment.forEach(eq => {
+            console.log(`Equipment ID: ${eq.equipmentid}, Status: ${eq.status}`);
+        });
+    } catch (err) {
+        console.error('Error executing query', err.stack);
+    } finally {
+        client.release();
+        await displayAdminDashboard(staffID);
     }
-  } catch (err) {
-    console.error('Error executing query', err.stack);
-  } finally {
-    client.release();
-    await displayAdminDashboard(staffID);
-  }
 }
 
-
-async function manageClassSchedules(staffID) {
-  console.log("1. Create a new group fitness class");
-  console.log("2. Edit a group fitness class");
-  console.log("3. Discontinue a group fitness class");
-  console.log("4. Modify a training session");
-  console.log("5. Withdraw from a training session");
-
-
-  const options = await prompt("\nEnter your option: ");
-  const client = await pool.connect();
-  try {
-    switch (options) {
-      case "1":
-        const schedule = await prompt("Enter schedule of class: ");
-        const trainerID = await prompt("Enter trainer ID for class: ");
-        await client.query("INSERT INTO Fitness_Class (Schedule,TrainerID) VALUES ($1, $2, $3, $4);", [schedule, trainerID]);
-        console.log("Class added successfully.");
-        break;
-      case "2":
-        const classIDToUpdate = await prompt("Enter id of class to be updated: ");
-        const newSchedule = await prompt("Enter updated class schedule: ");
-        await client.query("UPDATE Fitness_Class SET Schedule = $1 WHERE ClassID = $2;", [newSchedule, classIDToUpdate]);
+async function updateClassSchedule(staffID) {
+    const classID = await prompt("Enter Class ID to update schedule: ");
+    const newSchedule = await prompt("Enter new schedule (integer value): ");
+    const client = await pool.connect();
+    try {
+        await client.query("UPDATE Fitness_Class SET Schedule = $1 WHERE ClassID = $2;", [newSchedule, classID]);
         console.log("Class schedule updated successfully.");
-        break;
-      case "3":
-        const classIDToCancel = await prompt("Enter id of class to be cancelled: ");
-        await client.query("DELETE FROM Fitness_Class WHERE ClassID = $1;", [classIDToCancel]);
-        console.log("Class cancelled successfully.");
-        break;
-      case "4":
-        const sessionIDToUpdate = await prompt("Enter id of session to be updated: ");
-        const newDate = await prompt("Enter updated date: ");
-        const newTime = await prompt("Enter updated time: ");
-        await client.query("UPDATE Training SET Date = $1, Time = $2 WHERE SessionID = $3;", [newDate, newTime, sessionIDToUpdate]);
-        console.log("Session updated successfully.");
-        break;
-      case "5":
-        const sessionIDToCancel = await prompt("Enter id of session to be cancelled: ");
-        await client.query("DELETE FROM Training WHERE SessionID = $1;", [sessionIDToCancel]);
-        console.log("Session cancelled successfully.");
-        break;
-      default:
-        console.log("Invalid option. Please try again.");
+    } catch (err) {
+        console.error('Error executing query', err.stack);
+    } finally {
+        client.release();
+        await displayAdminDashboard(staffID);
     }
-  } catch (err) {
-    console.error('Error executing query', err.stack);
-  } finally {
-    client.release();
-    await displayAdminDashboard(staffID);
-  }
 }
+
+async function manageBilling(staffID) {
+    const client = await pool.connect();
+    try {
+        const members = await client.query("SELECT MemberID, Name, PaymentStatus FROM Members;");
+        if (members.rows.length > 0) {
+            members.rows.forEach(member => {
+                console.log(`Member ID: ${member.memberid}, Name: ${member.name}, Current Payment Status: ${member.paymentstatus}`);
+            });
+
+            const memberID = await prompt("Enter Member ID to update payment status: ");
+            const newPaymentStatus = await prompt("Enter new payment status (Paid or Unpaid): ");
+
+            if (newPaymentStatus.toLowerCase() !== 'paid' && newPaymentStatus.toLowerCase() !== 'unpaid') {
+                console.log("Invalid payment status entered. Please enter 'Paid' or 'Unpaid'.");
+                return;
+            }
+
+            await client.query("UPDATE Members SET PaymentStatus = $1 WHERE MemberID = $2;", [newPaymentStatus, memberID]);
+            console.log("Payment status updated successfully for Member ID:", memberID);
+        } else {
+            console.log("No members found.");
+        }
+    } catch (err) {
+        console.error('Error executing query', err.stack);
+    } finally {
+        client.release();
+        await displayAdminDashboard(staffID);
+    }
+}
+
 
 async function login() {
   console.log("1. Login as Member");
