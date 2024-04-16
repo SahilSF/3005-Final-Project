@@ -3,7 +3,7 @@ const { Pool } = pkg;
 
 
 // Database connection parameters
-const DB_NAME = "New";
+const DB_NAME = "Gym";
 const DB_USER = "postgres";
 const DB_PASSWORD = "sdfg";
 const DB_HOST = "localhost";
@@ -623,7 +623,6 @@ async function main() {
             process.exit(0);
     }
 }
-
 
 main().catch(err => {
     console.error('Startup error:', err);
