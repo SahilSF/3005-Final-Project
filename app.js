@@ -111,46 +111,47 @@ async function handleScheduleManagement(memberID) {
   console.log("3. Change the time of a personal class");
   console.log("4. Withdraw from a group class");
   console.log("5. Withdraw from a personal class");
-  
 
   const options = await prompt("\nEnter your option: ");
   const client = await pool.connect();
   try {
     switch (options) {
       case "1":
-
         const groupName = await prompt("Enter name of group: ");
-        const classID = await prompt("Enter ID of trainer you want to register for: ");
-        const classRes = await client.query("SELECT Schedule FROM Fitness_Class WHERE TrainerID = $1;", [TrainerID]);
-        const fitnessClass = classRes.rows[0];
-        if (fitnessClass) {
-          console.log(`Schedule: ${fitnessClass.schedule},Trainer ID: ${fitnessClass.trainerid}`);
-          await client.query("INSERT INTO Register (MemberID, ClassID, GroupName) VALUES ($1, $2, $3);", [memberID, classID, groupName]);
+        const trainerID = await prompt("Enter ID of trainer whose class you want to register for: ");
+        const classRes = await client.query("SELECT ClassID, Schedule FROM Fitness_Class WHERE TrainerID = $1;", [trainerID]);
+        if (classRes.rows.length > 0) {
+          classRes.rows.forEach(cls => {
+            console.log(`Class ID: ${cls.classid}, Schedule: ${cls.schedule}`);
+          });
+          const classID = await prompt("Enter Class ID from the above list to register: ");
+          await client.query("INSERT INTO Register (MemberID, ClassID, Session) VALUES ($1, $2, $3);", [memberID, classID, groupName]);
           console.log("Registration successful.");
+        } else {
+          console.log("No available classes for this trainer.");
         }
         break;
       case "2":
-        const res = await client.query(`SELECT t.TrainerID, t.Name, t.Specialization FROM Trainer t LEFT JOIN Training ts ON t.TrainerID = ts.TrainerID GROUP BY t.TrainerID, t.Name, t.Specialization HAVING COUNT(ts.SessionID) = 0;`);
+        const res = await client.query("SELECT t.TrainerID, t.Name, t.Specialization FROM Trainer t LEFT JOIN Training ts ON t.TrainerID = ts.TrainerID GROUP BY t.TrainerID, t.Name, t.Specialization HAVING COUNT(ts.SessionID) = 0;");
         const sessions = res.rows;
         if (sessions.length > 0) {
-        console.log("Available trainers:");
-        sessions.forEach(session => {
-        console.log(`${session.trainerid}: ${session.name}, Specialization: ${session.specialization}`);
-         });
-        const trainerID = await prompt("Enter ID of the trainer you want to schedule a session with: ");
-        const date = await prompt("Enter date of session (YYYY-MM-DD): ");
-        const time = await prompt("Enter time of session (HH:MM): ");
-        const memberID = await prompt("Enter your Member ID: "); 
-        await client.query("INSERT INTO Training (Date, Time, MemberID, TrainerID) VALUES ($1, $2, $3, $4);", [date, time, memberID, trainerID]);
-        console.log("Session scheduled successfully.");
-         } else {
-        console.log("No trainers available.");
+          console.log("Available trainers:");
+          sessions.forEach(session => {
+            console.log(`${session.trainerid}: ${session.name}, Specialization: ${session.specialization}`);
+          });
+          const trainerID = await prompt("Enter ID of the trainer you want to schedule a session with: ");
+          const date = await prompt("Enter date of session (YYYY-MM-DD): ");
+          const time = await prompt("Enter time of session (HH:MM): ");
+          await client.query("INSERT INTO Training (Date, Time, MemberID, TrainerID) VALUES ($1, $2, $3, $4);", [date, time, memberID, trainerID]);
+          console.log("Session scheduled successfully.");
+        } else {
+          console.log("No trainers available.");
         }
         break;
       case "3":
         const sessionIDReschedule = await prompt("Enter ID of session to be rescheduled: ");
-        const newDate = await prompt("Enter new date: ");
-        const newTime = await prompt("Enter new time: ");
+        const newDate = await prompt("Enter new date (YYYY-MM-DD): ");
+        const newTime = await prompt("Enter new time (HH:MM): ");
         await client.query("UPDATE Training SET Date = $1, Time = $2 WHERE SessionID = $3;", [newDate, newTime, sessionIDReschedule]);
         console.log("Session rescheduled successfully.");
         break;
@@ -174,6 +175,7 @@ async function handleScheduleManagement(memberID) {
     await showMemberDashboard(memberID);
   }
 }
+
 
 
 async function modifyUserProfile(memberID) {
