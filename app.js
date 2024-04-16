@@ -76,23 +76,23 @@ async function showMemberDashboard(memberID) {
 async function showSchedules(memberID) {
   const client = await pool.connect();
   try {
-    const res = await client.query("SELECT SessionID, Date, Time, TrainerID FROM Training WHERE MemberID = $1;", [memberID]);
+    const res = await client.query("SELECT TrainerID, SessionID FROM Training WHERE MemberID = $1;", [memberID]);
     const sessions = res.rows;
     if (sessions.length > 0) {
       console.log("\nUpcoming Training sessions:");
       sessions.forEach(session => {
-        console.log(`Session ID: ${session.sessionid}, Date: ${session.date}, Time: ${session.time}, Trainer ID: ${session.trainerid}`);
+        console.log(`Session ID: ${session.sessionid}, Trainer ID: ${session.trainerid}`);
       });
     } else {
       console.log("No upcoming Training sessions.");
     }
     
-    const classRes = await client.query(`SELECT FC.ClassID, FC.Schedule, FC.TrainerID FROM Fitness_Class FC JOIN Register R ON FC.ClassID = R.ClassID WHERE R.MemberID = $1;`, [memberID]);
+    const classRes = await client.query(`SELECT FC.Schedule, FC.TrainerID FROM Fitness_Class FC JOIN Register R ON FC.ClassID = R.ClassID WHERE R.MemberID = $1;`, [memberID]);
     const classes = classRes.rows;
     if (classes.length > 0) {
       console.log("\nUpcoming Group Classes:");
       classes.forEach(cls => {
-        console.log(`Class ID: ${cls.classid}, Schedule: ${cls.schedule}, Trainer ID: ${cls.trainerid}`);
+        console.log(`Schedule: ${cls.schedule}, Trainer ID: ${cls.trainerid}`);
       });
     } else {
       console.log("No upcoming Group Classes.");
@@ -120,11 +120,11 @@ async function handleScheduleManagement(memberID) {
       case "1":
 
         const groupName = await prompt("Enter name of group: ");
-        const classID = await prompt("Enter ID of class you want to register for: ");
-        const classRes = await client.query("SELECT Schedule, RoomID, TrainerID FROM Fitness_Class WHERE ClassID = $1;", [classID]);
+        const classID = await prompt("Enter ID of trainer you want to register for: ");
+        const classRes = await client.query("SELECT Schedule FROM Fitness_Class WHERE TrainerID = $1;", [TrainerID]);
         const fitnessClass = classRes.rows[0];
         if (fitnessClass) {
-          console.log(`Schedule: ${fitnessClass.schedule}, Room ID: ${fitnessClass.roomid}, Trainer ID: ${fitnessClass.trainerid}`);
+          console.log(`Schedule: ${fitnessClass.schedule},Trainer ID: ${fitnessClass.trainerid}`);
           await client.query("INSERT INTO Register (MemberID, ClassID, GroupName) VALUES ($1, $2, $3);", [memberID, classID, groupName]);
           console.log("Registration successful.");
         }

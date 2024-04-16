@@ -5,9 +5,9 @@ INSERT INTO Members (Name, Email, Password, Goal, Weight, PaymentStatus) VALUES
 ('Jane Smith', 'janesmith@example.com', 'password456', 'Gain muscle', '22', 'Unpaid');
 
 -- Insert data into Trainer
-INSERT INTO Trainer (Name, Specialization) VALUES
-('Sam Taylor', 'Cardio'),
-('Alex Jordan', 'Strength training');
+INSERT INTO Trainer (TrainerID , Name, Specialization) VALUES
+('1','Sam Taylor', 'Cardio'),
+('2','Alex Jordan', 'Strength training');
 
 -- Insert data into Fitness_Class
 INSERT INTO Fitness_Class (Schedule, TrainerID) VALUES
