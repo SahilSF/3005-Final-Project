@@ -3,9 +3,9 @@ const { Pool } = pkg;
 
 
 // Database connection parameters
-const DB_NAME = "Gym";
+const DB_NAME = "New";
 const DB_USER = "postgres";
-const DB_PASSWORD = "1234567890";
+const DB_PASSWORD = "sdfg";
 const DB_HOST = "localhost";
 const DB_PORT = "5432";
 
