@@ -246,102 +246,120 @@ async function showProfile(memberID) {
 }
   
 async function showTrainerDashboard(trainerID) {
-    
-    console.log("1. Modify availability");
-    console.log("2. View member profiles");
-    console.log("3. View your schedule");
-    console.log("4. Sign out");
+  console.log("1. Modify availability");
+  console.log("2. View member profiles");
+  console.log("3. View your schedule");
+  console.log("4. Sign out");
 
-  
-  
-    const options = await prompt("\nEnter your option: ");
-    switch (options) {
-      case "1":
-        await updateAvailability(trainerID);
-        break;
-      case "2":
-        await showMemberProfiles(trainerID);
-        break;
-      case "3":
-        await showrainerSchedules(trainerID);
-        break;
-      case "4":
-        main(); 
-        break;
-      default:
-        console.log("\nInvalid option. Please try again.");
-        await showTrainerDashboard(trainerID);
-    }
+  const options = await prompt("\nEnter your option: ");
+  switch (options) {
+    case "1":
+      await modifyAvailability(trainerID);
+      break;
+    case "2":
+      await showMemberProfiles(trainerID);
+      break;
+    case "3":
+      await showTrainerSchedules(trainerID);
+      break;
+    case "4":
+      console.log("Signing out...");
+      await main();
+      break;
+    default:
+      console.log("\nInvalid option. Please try again.");
+      await showTrainerDashboard(trainerID);
   }
+}
 
-  async function showrainerSchedules(trainerID) {
-    const client = await pool.connect();
-    try {
+async function modifyAvailability(trainerID) {
+  console.log("Displaying current schedules to infer availability.");
+  const client = await pool.connect();
+  try {
+      const trainingSessions = await client.query("SELECT Date, Time FROM Training WHERE TrainerID = $1;", [trainerID]);
+      console.log("Current Training Sessions:");
+      if (trainingSessions.rows.length > 0) {
+          trainingSessions.rows.forEach(session => {
+              console.log(`Date: ${session.date}, Time: ${session.time}`);
+          });
+      } else {
+          console.log("No training sessions found.");
+      }
+
+      const fitnessClasses = await client.query("SELECT Schedule FROM Fitness_Class WHERE TrainerID = $1;", [trainerID]);
+      console.log("Current Fitness Class Schedules:");
+      if (fitnessClasses.rows.length > 0) {
+          fitnessClasses.rows.forEach(cls => {
+              console.log(`Schedule: ${cls.schedule}`);
+          });
+      } else {
+          console.log("No fitness classes found.");
+      }
+
+      console.log("Note: Trainer is assumed to be available outside of the above times.");
+  } catch (err) {
+      console.error('Error executing query', err.stack);
+  } finally {
+      client.release();
+      await showTrainerDashboard(trainerID);
+  }
+}
+
+
+async function showTrainerSchedules(trainerID) {
+  const client = await pool.connect();
+  try {
       const res = await client.query("SELECT SessionID, Date, Time, MemberID FROM Training WHERE TrainerID = $1;", [trainerID]);
       const sessions = res.rows;
       if (sessions.length > 0) {
-        console.log("Upcoming Training sessions:");
-        sessions.forEach(session => {
-          console.log(`Session ID: ${session.sessionid}, Date: ${session.date}, Time: ${session.time}, Member ID: ${session.memberid}`);
-        });
+          console.log("Upcoming Training sessions:");
+          sessions.forEach(session => {
+              console.log(`Session ID: ${session.sessionid}, Date: ${session.date}, Time: ${session.time}, Member ID: ${session.memberid}`);
+          });
       } else {
-        console.log("No upcoming Training sessions.");
+          console.log("No upcoming Training sessions.");
       }
-  
+
       const classRes = await client.query("SELECT ClassID, Schedule, RoomID FROM Fitness_Class WHERE TrainerID = $1;", [trainerID]);
       const classes = classRes.rows;
       if (classes.length > 0) {
-        console.log("Upcoming Group Fitness Classes:");
-        classes.forEach(cls => {
-          console.log(`Class ID: ${cls.classid}, Schedule: ${cls.schedule}, Room ID: ${cls.RoomID}`);
-        });
+          console.log("Upcoming Group Fitness Classes:");
+          classes.forEach(cls => {
+              console.log(`Class ID: ${cls.classid}, Schedule: ${cls.schedule}, Room ID: ${cls.roomid}`);
+          });
       } else {
-        console.log("No upcoming Group Fitness Classes.");
+          console.log("No upcoming Group Fitness Classes.");
       }
-    } catch (err) {
+  } catch (err) {
       console.error('Error executing query', err.stack);
-    } finally {
+  } finally {
       client.release();
       await showTrainerDashboard(trainerID);
-    }
   }
+}
 
-  async function updateAvailability(trainerID) {
-    const availability = await prompt("Enter your availability: ");
-    const client = await pool.connect();
-    try {
-      await client.query("UPDATE Trainer SET AvailableTimes = $1 WHERE TrainerID = $2;", [availability, trainerID]);
-      console.log("Availability updated successfully.");
-    } catch (err) {
-      console.error('Error executing query', err.stack);
-    } finally {
-      client.release();
-      await showTrainerDashboard(trainerID);
-    }
-  }
-
-  async function showMemberProfiles(trainerID) {
-    const memberName = await prompt("Enter name of member to be searched: ");
-    const client = await pool.connect();
-    try {
-      const res = await client.query("SELECT MemberID, Name, Email, goal, Weight, PaymentStatus FROM Members WHERE Name = $1;", [memberName]);
+async function showMemberProfiles(trainerID) {
+  const memberName = await prompt("Enter name of member to be searched: ");
+  const client = await pool.connect();
+  try {
+      const res = await client.query("SELECT MemberID, Name, Email, Goal, Weight, PaymentStatus FROM Members WHERE Name = $1;", [memberName]);
       const members = res.rows;
       if (members.length > 0) {
-        console.log("Member profiles found:");
-        members.forEach(member => {
-          console.log(`Member ID: ${member.memberid}, Name: ${member.name}, Email: ${member.email}, Goal: ${member.goal}, Weight: ${member.Weight}, Payment Status: ${member.paymentstatus}`);
-        });
+          console.log("Member profiles found:");
+          members.forEach(member => {
+              console.log(`Member ID: ${member.memberid}, Name: ${member.name}, Email: ${member.email}, Goal: ${member.goal}, Weight: ${member.weight}, Payment Status: ${member.paymentstatus}`);
+          });
       } else {
-        console.log("Member not found.");
+          console.log("Member not found.");
       }
-    } catch (err) {
+  } catch (err) {
       console.error('Error executing query', err.stack);
-    } finally {
+  } finally {
       client.release();
       await showTrainerDashboard(trainerID);
-    }
   }
-  
+}
+
 
 
   async function displayAdminDashboard(staffID) {
@@ -367,6 +385,7 @@ async function showTrainerDashboard(trainerID) {
             break;
         case "5":
             console.log("Exiting...");
+            await main();
             break;
         default:
             console.log("\nInvalid option. Please try again.");
@@ -600,7 +619,7 @@ async function main() {
             break;
         default:
             console.log("Invalid option. Please try again.");
-            await main();
+            process.exit(0);
     }
 }
 
