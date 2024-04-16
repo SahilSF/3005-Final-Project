@@ -37,7 +37,6 @@ CREATE TABLE Equipment (
     Status INTEGER
 );
 
-
 CREATE TABLE Equipment_Admin (
     EquipmentID INTEGER,
     StaffID INTEGER,
