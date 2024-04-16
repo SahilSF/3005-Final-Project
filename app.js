@@ -87,10 +87,7 @@ async function showSchedules(memberID) {
       console.log("No upcoming Training sessions.");
     }
     
-    const classRes = await client.query(`SELECT FC.ClassID, FC.Schedule, FC.TrainerID 
-                                         FROM Fitness_Class FC 
-                                         JOIN Register R ON FC.ClassID = R.ClassID 
-                                         WHERE R.MemberID = $1;`, [memberID]);
+    const classRes = await client.query(`SELECT FC.ClassID, FC.Schedule, FC.TrainerID FROM Fitness_Class FC JOIN Register R ON FC.ClassID = R.ClassID WHERE R.MemberID = $1;`, [memberID]);
     const classes = classRes.rows;
     if (classes.length > 0) {
       console.log("\nUpcoming Group Classes:");
